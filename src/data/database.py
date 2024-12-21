@@ -14,16 +14,22 @@ class Database:
     def __init__(self):
         """Initialize database connection and create tables."""
         self.conn = sqlite3.connect(str(DATABASE_PATH))
-        self.reset_database()  # Reset database on startup
         self.create_tables()
         self.initialize_festivals()
 
-    def reset_database(self):
-        """Reset the database by dropping all tables."""
+    def check_data_exists(self) -> bool:
+        """Check if the database already has data."""
         cursor = self.conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS festivals")
-        cursor.execute("DROP TABLE IF EXISTS bitcoin_prices")
-        self.conn.commit()
+        
+        # Check festivals table
+        cursor.execute('SELECT COUNT(*) FROM festivals')
+        festivals_count = cursor.fetchone()[0]
+        
+        # Check if we have data up to 2030
+        cursor.execute("SELECT COUNT(*) FROM festivals WHERE strftime('%Y', start_date) = '2030'")
+        has_future_data = cursor.fetchone()[0] > 0
+        
+        return festivals_count > 0 and has_future_data
 
     def create_tables(self):
         """Create necessary database tables if they don't exist."""
@@ -56,28 +62,26 @@ class Database:
 
     def initialize_festivals(self):
         """Initialize the festivals table with data from config."""
-        # Check if festivals table is empty
-        cursor = self.conn.cursor()
-        cursor.execute('SELECT COUNT(*) FROM festivals')
-        count = cursor.fetchone()[0]
+        # Check if database already has complete data
+        if self.check_data_exists():
+            return
         
-        if count == 0:
-            # Get festivals from config
-            from config.festivals import FESTIVALS
-            
-            # Convert to DataFrame
-            festivals_df = pd.DataFrame(FESTIVALS)
-            
-            # Convert dates to datetime for proper sorting
-            for col in ['start_date', 'end_date']:
-                festivals_df[col] = pd.to_datetime(festivals_df[col])
-            
-            # Sort by start date
-            festivals_df = festivals_df.sort_values('start_date')
-            
-            # Store in database
-            self.store_festivals(festivals_df)
-            self.conn.commit()
+        # Get festivals from config
+        from config.festivals import FESTIVALS
+        
+        # Convert to DataFrame
+        festivals_df = pd.DataFrame(FESTIVALS)
+        
+        # Convert dates to datetime for proper sorting
+        for col in ['start_date', 'end_date']:
+            festivals_df[col] = pd.to_datetime(festivals_df[col])
+        
+        # Sort by start date
+        festivals_df = festivals_df.sort_values('start_date')
+        
+        # Store in database
+        self.store_festivals(festivals_df)
+        self.conn.commit()
 
     def store_bitcoin_prices(self, df: pd.DataFrame):
         """Store Bitcoin price data in the database."""
