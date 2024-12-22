@@ -1,17 +1,23 @@
 # Bitcoin Festival Price Tracker
 
-A Streamlit application that tracks Bitcoin price performance during festivals and provides comprehensive on-chain analysis.
+A Streamlit application that tracks Bitcoin price performance during festivals and provides comprehensive market analysis.
 
 ## Features
 
 - Historical price analysis during festivals
-- Real-time on-chain metrics from Glassnode
-- Market sentiment analysis
+- Festival performance comparison and statistics
+- Market sentiment analysis with Fear & Greed Index
+- On-chain analysis with NUPL (Net Unrealized Profit/Loss)
 - Bull/Bear market cycle detection
-- Mining metrics and profitability analysis
-- Exchange flow analysis
-- HODL waves visualization
-- Market valuation metrics
+- Drawdown and volatility analysis
+- Upcoming festival predictions with scenario analysis
+
+## Data Sources
+
+- Price data: Yahoo Finance
+- NUPL data: bitcoin-data.com
+- Fear & Greed Index: alternative.me
+- Festival dates: Custom configuration
 
 ## Setup
 
@@ -26,23 +32,31 @@ cd bitcoin-festival-tracker
 pip install -r requirements.txt
 ```
 
-3. Create a `.env` file in the root directory with your API keys:
-```bash
-GLASSNODE_API_KEY=your_glassnode_api_key
-```
-
-You can get a Glassnode API key by signing up at [Glassnode](https://glassnode.com).
-
-4. Run the application:
+3. Run the application:
 ```bash
 streamlit run src/views/app.py
 ```
 
-## Data Sources
+## Analysis Features
 
-- Price data: Yahoo Finance
-- On-chain metrics: Glassnode
-- Festival dates: Custom configuration
+### Festival Analysis
+- Performance tracking during different festivals
+- Historical statistics and trends
+- Volatility and drawdown analysis
+- Festival category comparison
+
+### Market Analysis
+- NUPL (Net Unrealized Profit/Loss) analysis
+- Market phase classification
+- Fear & Greed Index tracking
+- Bull/Bear market cycle detection
+- Drawdown and volatility metrics
+
+### Prediction Features
+- Upcoming festival analysis
+- Scenario-based predictions
+- Historical pattern analysis
+- Risk assessment
 
 ## Contributing
 

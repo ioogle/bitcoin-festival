@@ -4,11 +4,67 @@ from datetime import datetime
 
 MAJOR_EVENTS = [
     {
+        'date': datetime(2024, 1, 31),
+        'event': 'Fed Rate Hold',
+        'description': 'Fed maintains interest rates at 5.25-5.50%',
+        'type': 'neutral',
+        'impact': 'Fed signals potential rate cuts in 2024'
+    },
+    {
+        'date': datetime(2023, 7, 26),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 5.25-5.50%',
+        'type': 'negative',
+        'impact': 'Last rate hike of 2023 tightening cycle'
+    },
+    {
+        'date': datetime(2023, 5, 3),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 5.00-5.25%',
+        'type': 'negative',
+        'impact': 'Tenth consecutive rate increase'
+    },
+    {
+        'date': datetime(2023, 3, 22),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 4.75-5.00%',
+        'type': 'negative',
+        'impact': 'Rate hike despite banking crisis'
+    },
+    {
+        'date': datetime(2022, 12, 14),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 4.25-4.50%',
+        'type': 'negative',
+        'impact': 'Seventh rate hike of 2022'
+    },
+    {
         'date': datetime(2022, 11, 8),
         'event': 'FTX Collapse',
         'description': 'FTX cryptocurrency exchange collapse',
         'type': 'negative',
         'impact': 'Major market crash and loss of confidence'
+    },
+    {
+        'date': datetime(2022, 9, 21),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 3.00-3.25%',
+        'type': 'negative',
+        'impact': 'Third consecutive 75 basis point hike'
+    },
+    {
+        'date': datetime(2022, 7, 27),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 2.25-2.50%',
+        'type': 'negative',
+        'impact': 'Second consecutive 75 basis point hike'
+    },
+    {
+        'date': datetime(2022, 6, 15),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 1.50-1.75%',
+        'type': 'negative',
+        'impact': 'Largest rate hike since 1994'
     },
     {
         'date': datetime(2022, 5, 7),
@@ -23,6 +79,20 @@ MAJOR_EVENTS = [
         'description': 'Lido stETH depegged from ETH',
         'type': 'negative',
         'impact': 'Caused liquidity crisis in DeFi'
+    },
+    {
+        'date': datetime(2022, 5, 4),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 0.75-1.00%',
+        'type': 'negative',
+        'impact': 'Largest rate hike since 2000'
+    },
+    {
+        'date': datetime(2022, 3, 16),
+        'event': 'Fed Rate Hike',
+        'description': 'Fed raises rates to 0.25-0.50%',
+        'type': 'negative',
+        'impact': 'First rate hike since 2018'
     },
     {
         'date': datetime(2016, 11, 8),
@@ -72,6 +142,13 @@ MAJOR_EVENTS = [
         'description': 'Market crash due to COVID-19 pandemic',
         'type': 'negative',
         'impact': 'Global market panic'
+    },
+    {
+        'date': datetime(2020, 3, 15),
+        'event': 'Fed Emergency Cut',
+        'description': 'Fed cuts rates to 0-0.25% due to COVID-19',
+        'type': 'neutral',
+        'impact': 'Emergency rate cut to near zero'
     },
     {
         'date': datetime(2023, 3, 10),
