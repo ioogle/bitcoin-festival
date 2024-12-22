@@ -4,6 +4,13 @@ from datetime import datetime
 
 MAJOR_EVENTS = [
     {
+        'date': datetime(2024, 12, 2),
+        'event': 'Trump 2nd Election',
+        'description': 'Donald Trump elected as US President again',
+        'type': 'positive',
+        'impact': 'Trump is back in the White House'
+    },
+    {
         'date': datetime(2024, 1, 31),
         'event': 'Fed Rate Hold',
         'description': 'Fed maintains interest rates at 5.25-5.50%',
