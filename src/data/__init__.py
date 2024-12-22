@@ -1,13 +1,6 @@
-"""Data package for Bitcoin Festival Price Tracker."""
+"""Data module initialization."""
 
-from .fetcher import (
-    fetch_bitcoin_prices,
-    get_festivals_data,
-    analyze_festival_performance
-)
+from .database import Database
+from .fetcher import DataFetcher
 
-__all__ = [
-    'fetch_bitcoin_prices',
-    'get_festivals_data',
-    'analyze_festival_performance'
-] 
+__all__ = ['Database', 'DataFetcher'] 
