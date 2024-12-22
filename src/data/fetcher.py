@@ -10,6 +10,7 @@ import time
 import os
 from config.festivals import FESTIVALS
 from config.events import HALVING_EVENTS, MAJOR_EVENTS
+from data.database import Database
 
 # Constants
 START_DATE = "2014-01-01"
@@ -21,9 +22,13 @@ RETRY_DELAY = 1  # seconds
 class DataFetcher:
     """Class for fetching and analyzing Bitcoin price data."""
     
-    def __init__(self):
-        """Initialize the data fetcher."""
-        pass
+    def __init__(self, db: Optional[Database] = None):
+        """Initialize the data fetcher.
+        
+        Args:
+            db: Optional Database instance. If not provided, a new one will be created.
+        """
+        self.db = db if db is not None else Database()
         
     def fetch_bitcoin_prices(self, start_date: str = START_DATE, end_date: str = None) -> pd.DataFrame:
         """Fetch Bitcoin price data from Yahoo Finance.
@@ -580,3 +585,102 @@ class DataFetcher:
         drawdown = (prices / rolling_max - 1) * 100
         
         return drawdown
+
+    def fetch_nupl_data(self, start_date: str = None, end_date: str = None) -> pd.DataFrame:
+        """Fetch Net Unrealized Profit/Loss (NUPL) data from bitcoin-data.com API.
+        
+        Args:
+            start_date: Start date in YYYY-MM-DD format
+            end_date: End date in YYYY-MM-DD format
+            
+        Returns:
+            DataFrame with NUPL data
+        """
+        try:
+            # Check if we need to update the data
+            last_update = self.db.get_last_nupl_update()
+            now = pd.Timestamp.now()
+            
+            # Only update once per day
+            if last_update is None or (now - last_update).days >= 1:
+                url = "https://bitcoin-data.com/v1/nupl"
+                
+                # Make request with retries
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        response = requests.get(url, timeout=10)
+                        response.raise_for_status()
+                        data = response.json()
+                        break
+                    except requests.RequestException as e:
+                        if attempt == MAX_RETRIES - 1:
+                            raise Exception(f"Failed to fetch NUPL data: {str(e)}")
+                        time.sleep(RETRY_DELAY)
+                
+                # Convert to DataFrame
+                df = pd.DataFrame(data)
+                
+                # Convert NUPL from string to float
+                df['nupl'] = pd.to_numeric(df['nupl'], errors='coerce')
+                
+                # Convert date to datetime
+                df['date'] = pd.to_datetime(df['d'])
+                
+                # Drop unnecessary columns and set index
+                df = df.drop(['d', 'unixTs'], axis=1)
+                df.set_index('date', inplace=True)
+                
+                # Sort by date
+                df.sort_index(inplace=True)
+                
+                # Store in database
+                self.db.store_nupl_data(df)
+            
+            # Get data from database
+            df = self.db.get_nupl_data()  # Get all data first
+            
+            if df.empty:
+                return df
+            
+            # Filter by date range if provided
+            if start_date:
+                start_ts = pd.to_datetime(start_date)
+                df = df[df.index >= start_ts]
+            if end_date:
+                end_ts = pd.to_datetime(end_date)
+                df = df[df.index <= end_ts]
+            
+            # If no data in range, return empty DataFrame
+            if df.empty:
+                return df
+            
+            # Add NUPL classification
+            df['nupl_classification'] = df['nupl'].apply(self.get_nupl_label)
+            
+            return df
+        
+        except Exception as e:
+            print(f"Error fetching NUPL data: {str(e)}")
+            return pd.DataFrame()
+
+    def get_nupl_label(self, value: float) -> str:
+        """Get market phase label based on NUPL value.
+        
+        Args:
+            value: NUPL value
+            
+        Returns:
+            Market phase label
+        """
+        if value <= -0.25:
+            return "Capitulation"
+        elif value <= 0:
+            return "Fear & Anxiety"
+        elif value <= 0.25:
+            return "Hope & Optimism"
+        elif value <= 0.5:
+            return "Belief & Thrill"
+        elif value <= 0.75:
+            return "Euphoria & Greed"
+        else:
+            return "Maximum Greed"

@@ -31,7 +31,7 @@ class BitcoinFestivalApp:
     def __init__(self):
         """Initialize the application."""
         self.db = Database()
-        self.fetcher = DataFetcher()
+        self.fetcher = DataFetcher(db=self.db)
         self.setup_page()
         self.load_initial_data()
 
@@ -1097,82 +1097,9 @@ class BitcoinFestivalApp:
             fig_fg.add_hrect(y0=55, y1=75, fillcolor="lightgreen", opacity=0.1, line_width=0, name="Greed")
             fig_fg.add_hrect(y0=75, y1=100, fillcolor="green", opacity=0.1, line_width=0, name="Extreme Greed")
             
-            # Add major events markers
-            events = self.fetcher.get_major_events()
-            for event in events:
-                event_date = event['date']
-                if event_date >= fear_greed_df.index[0] and event_date <= fear_greed_df.index[-1]:
-                    # Get sentiment and price at event
-                    event_sentiment = fear_greed_df[fear_greed_df.index <= event_date]['value'].iloc[-1]
-                    event_price = price_resampled[price_resampled.index <= event_date].iloc[-1]
-                    
-                    # Add marker
-                    fig_fg.add_trace(
-                        go.Scatter(
-                            x=[event_date],
-                            y=[event_sentiment],
-                            mode='markers',
-                            name=event['event'],
-                            marker=dict(
-                                size=12,
-                                symbol='circle',
-                                color='red' if event['type'] == 'negative' else 'green' if event['type'] == 'positive' else 'gray',
-                                line=dict(color='white', width=1)
-                            ),
-                            text=[f"{event['event']}<br>Sentiment: {event_sentiment:.0f}<br>Price: ${event_price:,.0f}"],
-                            hoverinfo='text'
-                        ),
-                        secondary_y=False
-                    )
-                    
-                    # Add vertical line for the event
-                    fig_fg.add_vline(
-                        x=event_date,
-                        line=dict(
-                            color='red' if event['type'] == 'negative' else 'green' if event['type'] == 'positive' else 'gray',
-                            width=1,
-                            dash='dash'
-                        ),
-                        opacity=0.3
-                    )
-            
-            # Add halving events markers
-            halving_dates = self.fetcher.get_halving_dates()
-            for halving_date in halving_dates:
-                if halving_date >= fear_greed_df.index[0] and halving_date <= fear_greed_df.index[-1]:
-                    # Get sentiment and price at halving
-                    halving_sentiment = fear_greed_df[fear_greed_df.index <= halving_date]['value'].iloc[-1]
-                    halving_price = price_resampled[price_resampled.index <= halving_date].iloc[-1]
-                    
-                    # Add marker
-                    fig_fg.add_trace(
-                        go.Scatter(
-                            x=[halving_date],
-                            y=[halving_sentiment],
-                            mode='markers',
-                            name='Bitcoin Halving',
-                            marker=dict(
-                                size=12,
-                                symbol='diamond',
-                                color='orange',
-                                line=dict(color='white', width=1)
-                            ),
-                            text=[f"Bitcoin Halving<br>Sentiment: {halving_sentiment:.0f}<br>Price: ${halving_price:,.0f}"],
-                            hoverinfo='text'
-                        ),
-                        secondary_y=False
-                    )
-                    
-                    # Add vertical line for halving
-                    fig_fg.add_vline(
-                        x=halving_date,
-                        line=dict(color='orange', width=1, dash='dash'),
-                        opacity=0.3
-                    )
-            
             # Update layout
             fig_fg.update_layout(
-                title='Bitcoin Fear & Greed Index with Price History and Major Events',
+                title='Bitcoin Fear & Greed Index with Price History',
                 xaxis_title='Date',
                 height=700,
                 showlegend=True,
@@ -1490,6 +1417,275 @@ class BitcoinFestivalApp:
         except Exception as e:
             st.error(f"Error fetching sentiment data: {str(e)}")
             st.info("Please try again later or contact support if the problem persists.")
+
+    def show_onchain_analysis(self, prices_df: pd.DataFrame):
+        """Show on-chain analysis page with NUPL data."""
+        st.header("⛓️ On-chain Analysis")
+        
+        try:
+            # Fetch NUPL data
+            with st.spinner("Fetching NUPL data..."):
+                nupl_df = self.fetcher.fetch_nupl_data()  # Get all data first
+                
+                if nupl_df.empty:
+                    st.error("Failed to fetch NUPL data.")
+                    return
+                
+                # Filter to match price data range
+                nupl_df = nupl_df[
+                    (nupl_df.index >= prices_df.index[0]) &
+                    (nupl_df.index <= prices_df.index[-1])
+                ]
+                
+                if nupl_df.empty:
+                    st.warning("No NUPL data available for the selected date range.")
+                    return
+            
+            # Current NUPL Analysis
+            st.subheader("📊 Current Market State")
+            current_nupl = float(nupl_df['nupl'].iloc[-1])  # Ensure it's a float
+            current_phase = nupl_df['nupl_classification'].iloc[-1]
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(
+                    "Current NUPL",
+                    f"{current_nupl:.3f}",
+                    f"{(current_nupl - float(nupl_df['nupl'].iloc[-2])):.3f}"  # Ensure it's a float
+                )
+            with col2:
+                st.metric(
+                    "Market Phase",
+                    current_phase
+                )
+            with col3:
+                # Calculate percentage of time in current phase
+                phase_distribution = nupl_df['nupl_classification'].value_counts(normalize=True)
+                current_phase_pct = phase_distribution.get(current_phase, 0) * 100
+                st.metric(
+                    "Time in Current Phase",
+                    f"{current_phase_pct:.1f}%"
+                )
+            
+            # NUPL vs Price Chart
+            st.subheader("📈 NUPL vs Bitcoin Price")
+            
+            # Create figure with secondary y-axis
+            fig = make_subplots(specs=[[{"secondary_y": True}]])
+            
+            # Add NUPL line
+            fig.add_trace(
+                go.Scatter(
+                    x=nupl_df.index,
+                    y=nupl_df['nupl'],
+                    name='NUPL',
+                    line=dict(color='blue', width=2)
+                ),
+                secondary_y=False
+            )
+            
+            # Add price line
+            fig.add_trace(
+                go.Scatter(
+                    x=prices_df.index,
+                    y=prices_df['price'],
+                    name='Bitcoin Price',
+                    line=dict(color='orange', width=1)
+                ),
+                secondary_y=True
+            )
+            
+            # Add colored background for different market phases
+            nupl_ranges = [
+                (-float('inf'), -0.25, 'rgba(255,0,0,0.1)', 'Capitulation'),
+                (-0.25, 0, 'rgba(255,165,0,0.1)', 'Fear & Anxiety'),
+                (0, 0.25, 'rgba(255,255,0,0.1)', 'Hope & Optimism'),
+                (0.25, 0.5, 'rgba(144,238,144,0.1)', 'Belief & Thrill'),
+                (0.5, 0.75, 'rgba(0,255,0,0.1)', 'Euphoria & Greed'),
+                (0.75, float('inf'), 'rgba(0,128,0,0.1)', 'Maximum Greed')
+            ]
+            
+            for low, high, color, label in nupl_ranges:
+                fig.add_hrect(
+                    y0=low,
+                    y1=high,
+                    fillcolor=color,
+                    line_width=0,
+                    annotation_text=label,
+                    annotation_position="left",
+                    secondary_y=False
+                )
+            
+            # Update layout
+            fig.update_layout(
+                title='NUPL vs Bitcoin Price History',
+                xaxis_title='Date',
+                height=600,
+                showlegend=True,
+                legend=dict(
+                    yanchor="top",
+                    y=0.99,
+                    xanchor="left",
+                    x=0.01,
+                    bgcolor='rgba(255, 255, 255, 0.8)'
+                ),
+                hovermode='x unified'
+            )
+            
+            # Update y-axes labels
+            fig.update_yaxes(title_text="NUPL", secondary_y=False)
+            fig.update_yaxes(title_text="Bitcoin Price (USD)", secondary_y=True)
+            
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Market Phase Distribution
+            st.subheader("📊 Market Phase Distribution")
+            
+            # Calculate time spent in each phase
+            phase_counts = nupl_df['nupl_classification'].value_counts()
+            phase_percentages = phase_counts / len(nupl_df) * 100
+            
+            # Create distribution chart
+            fig_dist = go.Figure(data=[
+                go.Bar(
+                    x=phase_percentages.index,
+                    y=phase_percentages.values,
+                    marker_color=['red', 'orange', 'yellow', 'lightgreen', 'green', 'darkgreen'],
+                    text=[f"{val:.1f}%" for val in phase_percentages.values],
+                    textposition='auto'
+                )
+            ])
+            
+            fig_dist.update_layout(
+                title='Time Spent in Each Market Phase',
+                xaxis_title='Market Phase',
+                yaxis_title='Percentage of Time (%)',
+                height=400,
+                showlegend=False
+            )
+            
+            st.plotly_chart(fig_dist, use_container_width=True)
+            
+            # Phase Transition Analysis
+            st.subheader("🔄 Phase Transition Analysis")
+            
+            # Calculate average duration of each phase
+            phase_durations = []
+            current_phase = None
+            phase_start = None
+            
+            for date, row in nupl_df.iterrows():
+                if current_phase != row['nupl_classification']:
+                    if current_phase is not None:
+                        duration = (date - phase_start).days
+                        phase_durations.append({
+                            'Phase': current_phase,
+                            'Start Date': phase_start,
+                            'End Date': date,
+                            'Duration (days)': duration
+                        })
+                    current_phase = row['nupl_classification']
+                    phase_start = date
+            
+            # Add the last phase
+            if current_phase is not None:
+                duration = (nupl_df.index[-1] - phase_start).days
+                phase_durations.append({
+                    'Phase': current_phase,
+                    'Start Date': phase_start,
+                    'End Date': nupl_df.index[-1],
+                    'Duration (days)': duration
+                })
+            
+            phase_durations_df = pd.DataFrame(phase_durations)
+            
+            if not phase_durations_df.empty:
+                avg_durations = phase_durations_df.groupby('Phase')['Duration (days)'].agg(['mean', 'min', 'max', 'count'])
+                avg_durations.columns = ['Average Duration', 'Minimum Duration', 'Maximum Duration', 'Occurrences']
+                
+                st.dataframe(
+                    avg_durations.style.format({
+                        'Average Duration': '{:.0f} days',
+                        'Minimum Duration': '{:.0f} days',
+                        'Maximum Duration': '{:.0f} days',
+                        'Occurrences': '{:.0f} times'
+                    }),
+                    use_container_width=True
+                )
+            
+            # Recent Phase Transitions
+            st.subheader("📅 Recent Phase Transitions")
+            
+            if not phase_durations_df.empty:
+                recent_transitions = phase_durations_df.tail(5)
+                for _, transition in recent_transitions.iterrows():
+                    st.write(
+                        f"**{transition['Phase']}**: "
+                        f"{transition['Start Date'].strftime('%Y-%m-%d')} to "
+                        f"{transition['End Date'].strftime('%Y-%m-%d')} "
+                        f"({transition['Duration (days)']} days)"
+                    )
+            
+            # Trading Insights
+            st.subheader("💡 Trading Insights")
+            
+            # Calculate returns during different phases
+            nupl_with_returns = pd.merge(
+                nupl_df,
+                prices_df['price'].pct_change().shift(-1),
+                left_index=True,
+                right_index=True,
+                how='inner'
+            )
+            
+            phase_returns = nupl_with_returns.groupby('nupl_classification')['price'].agg([
+                ('avg_return', lambda x: x.mean() * 100),
+                ('volatility', lambda x: x.std() * 100),
+                ('positive_days', lambda x: (x > 0).mean() * 100)
+            ])
+            
+            st.dataframe(
+                phase_returns.style.format({
+                    'avg_return': '{:.2f}%',
+                    'volatility': '{:.2f}%',
+                    'positive_days': '{:.1f}%'
+                }),
+                use_container_width=True
+            )
+            
+            # Current Market Insights
+            st.subheader("🎯 Current Market Insights")
+            
+            # Add insights based on current NUPL value and market phase
+            if current_nupl <= -0.25:
+                st.success("🎯 Market is in capitulation phase - historically a strong buying opportunity")
+            elif current_nupl <= 0:
+                st.info("📊 Market shows fear and anxiety - potential accumulation zone")
+            elif current_nupl <= 0.25:
+                st.info("📈 Market in hope & optimism phase - moderate buying opportunity")
+            elif current_nupl <= 0.5:
+                st.warning("⚠️ Market showing belief & thrill - consider taking some profits")
+            elif current_nupl <= 0.75:
+                st.warning("🔥 Market in euphoria - high risk of correction")
+            else:
+                st.error("⚠️ Maximum greed detected - extreme caution advised")
+            
+            # Add historical context
+            avg_nupl = nupl_df['nupl'].mean()
+            std_nupl = nupl_df['nupl'].std()
+            
+            st.write(f"""
+            **Historical Context:**
+            - Current NUPL: {current_nupl:.3f}
+            - Historical Average: {avg_nupl:.3f}
+            - Standard Deviation: {std_nupl:.3f}
+            - Z-Score: {(current_nupl - avg_nupl) / std_nupl:.2f}
+            """)
+            
+        except Exception as e:
+            st.error(f"Error in on-chain analysis: {str(e)}")
+            st.info("Please try again later or contact support if the problem persists.")
+
     def run(self):
         """Run the Streamlit application."""
         st.sidebar.title("🎯 Bitcoin Festival Tracker")
@@ -1555,7 +1751,7 @@ class BitcoinFestivalApp:
             # Navigation for historical analysis
             page = st.sidebar.radio(
                 "📱 Navigation",
-                ["Overview", "Festival Analysis", "Bull & Bear", "Market Sentiment", "Drawdown & Volatility"],
+                ["Overview", "Festival Analysis", "Bull & Bear", "Market Sentiment", "On-chain Analysis", "Drawdown & Volatility"],
                 help="Choose what analysis to view"
             )
             
@@ -1640,6 +1836,8 @@ class BitcoinFestivalApp:
             self.show_bull_bear_analysis(prices_df)
         elif page == "Market Sentiment":
             self.show_sentiment_analysis(prices_df)
+        elif page == "On-chain Analysis":
+            self.show_onchain_analysis(prices_df)
         elif page == "Drawdown & Volatility":
             self.show_drawdown_analysis(prices_df, stats_df, time_range)
         else:  # Upcoming Festivals

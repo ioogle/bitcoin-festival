@@ -54,9 +54,19 @@ class Database:
             )
         ''')
         
+        # Create NUPL data table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS nupl_data (
+                date TEXT PRIMARY KEY,
+                nupl REAL,
+                last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
         # Create indices for better query performance
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_start_date ON festivals(start_date)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_category ON festivals(category)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_nupl_date ON nupl_data(date)')
         
         self.conn.commit()
 
@@ -142,6 +152,63 @@ class Database:
             df[col] = pd.to_datetime(df[col]).dt.strftime('%Y-%m-%d')
         
         return df
+
+    def store_nupl_data(self, df: pd.DataFrame):
+        """Store NUPL data in the database.
+        
+        Args:
+            df: DataFrame with NUPL data (index: date, columns: nupl)
+        """
+        # Convert index to date string if it's datetime
+        if isinstance(df.index, pd.DatetimeIndex):
+            df = df.copy()
+            df.index = df.index.strftime('%Y-%m-%d')
+        
+        # Add last_updated column with current timestamp
+        df['last_updated'] = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        try:
+            # Store in database
+            df.to_sql('nupl_data', self.conn, if_exists='replace', index=True, index_label='date')
+            
+            # Create index after storing data
+            cursor = self.conn.cursor()
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_nupl_date ON nupl_data(date)')
+            self.conn.commit()
+            
+        except Exception as e:
+            print(f"Error storing NUPL data: {str(e)}")
+            self.conn.rollback()
+
+    def get_nupl_data(self, start_date=None, end_date=None) -> pd.DataFrame:
+        """Retrieve NUPL data from the database.
+        
+        Args:
+            start_date: Start date in YYYY-MM-DD format
+            end_date: End date in YYYY-MM-DD format
+            
+        Returns:
+            DataFrame with NUPL data
+        """
+        query = 'SELECT date, nupl FROM nupl_data'
+        if start_date and end_date:
+            query += f" WHERE date BETWEEN '{start_date}' AND '{end_date}'"
+        df = pd.read_sql_query(query, self.conn, index_col='date', parse_dates=['date'])
+        return df
+
+    def get_last_nupl_update(self) -> pd.Timestamp:
+        """Get the timestamp of the last NUPL data update.
+        
+        Returns:
+            Timestamp of last update or None if no data exists
+        """
+        try:
+            cursor = self.conn.cursor()
+            cursor.execute('SELECT MAX(last_updated) FROM nupl_data')
+            result = cursor.fetchone()[0]
+            return pd.Timestamp(result) if result else None
+        except sqlite3.OperationalError:  # Table doesn't exist
+            return None
 
     def __del__(self):
         """Close database connection when object is destroyed."""
