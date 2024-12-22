@@ -26,6 +26,7 @@ from utils.visualization import (
     create_volatility_chart,
     format_metrics
 )
+from src.config.events import HALVING_EVENTS, ALL_MARKET_EVENTS
 
 class BitcoinFestivalApp:
     def __init__(self):
@@ -900,7 +901,7 @@ class BitcoinFestivalApp:
         
         # Add markers for major events
         for event in events:
-            event_date = event['date']
+            event_date = event.date
             if event_date >= prices_df.index[0] and event_date <= prices_df.index[-1]:
                 # Get price at event
                 event_price = prices_df[prices_df.index <= event_date]['price'].iloc[-1]
@@ -911,13 +912,13 @@ class BitcoinFestivalApp:
                         x=[event_date],
                         y=[event_price],
                         mode='markers+text',
-                        name=event['event'],
-                        text=[event['event']],
+                        name=event.event,
+                        text=[event.description],
                         textposition='top center',
                         marker=dict(
                             size=10,
                             symbol='circle',
-                            color='red' if event['type'] == 'negative' else 'green' if event['type'] == 'positive' else 'gray'
+                            color=event.event_color()
                         ),
                         showlegend=True
                     )
@@ -1143,6 +1144,7 @@ class BitcoinFestivalApp:
                 event_impacts = []
                 window = 7  # Days to analyze before/after event
                 
+                events = self.fetcher.get_major_events()
                 for event in events:
                     event_date = event['date']
                     if event_date >= fear_greed_df.index[0] and event_date <= fear_greed_df.index[-1]:
@@ -1157,9 +1159,9 @@ class BitcoinFestivalApp:
                         
                         if not pre_event.empty and not post_event.empty:
                             event_impacts.append({
-                                'Event': event['event'],
+                                'Event': event.event,
                                 'Date': event_date.strftime('%Y-%m-%d'),
-                                'Type': event['type'],
+                                'Type': event.type,
                                 'Pre-Event Sentiment': pre_event['value'].mean(),
                                 'Post-Event Sentiment': post_event['value'].mean(),
                                 'Sentiment Change': post_event['value'].mean() - pre_event['value'].mean(),
@@ -1221,6 +1223,7 @@ class BitcoinFestivalApp:
                 halving_impacts = []
                 halving_window = 30  # Longer window for halving analysis
                 
+                halving_dates = [event.date for event in HALVING_EVENTS]
                 for halving_date in halving_dates:
                     if halving_date >= fear_greed_df.index[0] and halving_date <= fear_greed_df.index[-1]:
                         pre_halving = fear_greed_df[
@@ -1668,7 +1671,7 @@ class BitcoinFestivalApp:
             elif current_nupl <= 0.75:
                 st.warning("🔥 Market in euphoria - high risk of correction")
             else:
-                st.error("⚠️ Maximum greed detected - extreme caution advised")
+                st.error("��️ Maximum greed detected - extreme caution advised")
             
             # Add historical context
             avg_nupl = nupl_df['nupl'].mean()
@@ -1685,6 +1688,227 @@ class BitcoinFestivalApp:
         except Exception as e:
             st.error(f"Error in on-chain analysis: {str(e)}")
             st.info("Please try again later or contact support if the problem persists.")
+
+    def show_events_analysis(self, prices_df):
+        """Analyze the relationship between events and subsequent Bitcoin price trends."""
+        st.header("📊 Events Impact Analysis")
+        
+        # Create tabs for different event types
+        event_tab1, event_tab2, event_tab3 = st.tabs(["Major Events", "Fed Events", "Halving Events"])
+        
+        def calculate_price_changes(event_date, prices_df):
+            """Calculate price changes after an event."""
+            if event_date > prices_df.index[-1]:
+                return None
+                
+            event_price = prices_df[prices_df.index <= event_date]['price'].iloc[-1]
+            
+            # Get future prices at different intervals
+            future_changes = {}
+            intervals = {
+                '1 Week': 7,
+                '1 Month': 30,
+                '3 Months': 90,
+                '6 Months': 180,
+                '1 Year': 365
+            }
+            
+            for label, days in intervals.items():
+                future_date = event_date + pd.Timedelta(days=days)
+                if future_date <= prices_df.index[-1]:
+                    future_price = prices_df[prices_df.index >= future_date]['price'].iloc[0]
+                    change = ((future_price - event_price) / event_price) * 100
+                    future_changes[label] = change
+                else:
+                    future_changes[label] = None
+            
+            return future_changes
+        
+        with event_tab1:
+            st.subheader("Major Events Analysis")
+            
+            # Filter out Fed events from major events
+            major_events = [e for e in ALL_MARKET_EVENTS if not e.event.startswith('Fed')]
+            
+            # Filter events within the price data range
+            filtered_events = [
+                {
+                    'Date': e.date.strftime('%Y-%m-%d'),
+                    'Event': e.event,
+                    'Type': e.type.capitalize(),
+                    'Description': e.description,
+                    **calculate_price_changes(e.date, prices_df)
+                }
+                for e in major_events
+                if e.date >= prices_df.index[0] and e.date <= prices_df.index[-1]
+            ]
+            
+            if filtered_events:
+                # Create DataFrame and sort by date
+                events_df = pd.DataFrame(filtered_events)
+                events_df = events_df.sort_values('Date', ascending=False)
+                
+                # Display events table with price changes
+                st.dataframe(
+                    events_df.style.format({
+                        '1 Week': '{:.1f}%',
+                        '1 Month': '{:.1f}%',
+                        '3 Months': '{:.1f}%',
+                        '6 Months': '{:.1f}%',
+                        '1 Year': '{:.1f}%'
+                    }).background_gradient(
+                        subset=['1 Week', '1 Month', '3 Months', '6 Months', '1 Year'],
+                        cmap='RdYlGn'
+                    ),
+                    use_container_width=True
+                )
+                
+                # Calculate average impact by event type
+                st.subheader("Average Impact by Event Type")
+                avg_by_type = events_df.groupby('Type').agg({
+                    '1 Week': 'mean',
+                    '1 Month': 'mean',
+                    '3 Months': 'mean',
+                    '6 Months': 'mean',
+                    '1 Year': 'mean'
+                }).round(1)
+                
+                st.dataframe(
+                    avg_by_type.style.format('{:.1f}%').background_gradient(cmap='RdYlGn'),
+                    use_container_width=True
+                )
+            else:
+                st.info("No major events found in the selected date range.")
+        
+        with event_tab2:
+            st.subheader("Fed Events Analysis")
+            
+            # Filter Fed events from major events
+            fed_events = [e for e in ALL_MARKET_EVENTS if e.event.startswith('Fed')]
+            
+            # Filter Fed events
+            filtered_events = [
+                {
+                    'Date': e.date.strftime('%Y-%m-%d'),
+                    'Event': e.event,
+                    'Description': e.description,
+                    'Type': e.type.capitalize(),
+                    **calculate_price_changes(e.date, prices_df)
+                }
+                for e in fed_events
+                if e.date >= prices_df.index[0] and e.date <= prices_df.index[-1]
+            ]
+            
+            if filtered_events:
+                # Create DataFrame and sort by date
+                fed_df = pd.DataFrame(filtered_events)
+                fed_df = fed_df.sort_values('Date', ascending=False)
+                
+                # Display Fed events table with price changes
+                st.dataframe(
+                    fed_df.style.format({
+                        '1 Week': '{:.1f}%',
+                        '1 Month': '{:.1f}%',
+                        '3 Months': '{:.1f}%',
+                        '6 Months': '{:.1f}%',
+                        '1 Year': '{:.1f}%'
+                    }).background_gradient(
+                        subset=['1 Week', '1 Month', '3 Months', '6 Months', '1 Year'],
+                        cmap='RdYlGn'
+                    ),
+                    use_container_width=True
+                )
+                
+                # Calculate average impact by Fed action type
+                st.subheader("Average Impact by Fed Action")
+                fed_df['Action'] = fed_df['Event'].apply(lambda x: 'Rate Hike' if 'Hike' in x else 'Rate Cut' if 'Cut' in x else 'Rate Hold')
+                avg_by_action = fed_df.groupby('Action').agg({
+                    '1 Week': 'mean',
+                    '1 Month': 'mean',
+                    '3 Months': 'mean',
+                    '6 Months': 'mean',
+                    '1 Year': 'mean'
+                }).round(1)
+                
+                st.dataframe(
+                    avg_by_action.style.format('{:.1f}%').background_gradient(cmap='RdYlGn'),
+                    use_container_width=True
+                )
+                
+                # Add Fed Funds Rate chart
+                st.subheader("Federal Funds Rate History")
+                rate_history = pd.DataFrame([
+                    {
+                        'Date': datetime.strptime(e['Date'], '%Y-%m-%d'),
+                        'Rate': float(e['Description'].split(':')[1].strip('%'))
+                    }
+                    for e in filtered_events
+                ]).sort_values('Date')
+                
+                fig = px.line(
+                    rate_history,
+                    x='Date',
+                    y='Rate',
+                    title='Federal Funds Rate Over Time',
+                    labels={'Rate': 'Rate (%)'}
+                )
+                fig.update_layout(showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.info("No Fed events found in the selected date range.")
+        
+        with event_tab3:
+            st.subheader("Halving Events Analysis")
+            
+            # Filter halving events
+            filtered_events = [
+                {
+                    'Date': h.date.strftime('%Y-%m-%d'),
+                    'Event': h.event,
+                    'Block Height': h.block_height,
+                    **calculate_price_changes(h.date, prices_df)
+                }
+                for h in HALVING_EVENTS
+                if h.date >= prices_df.index[0] and h.date <= prices_df.index[-1]
+            ]
+            
+            if filtered_events:
+                # Create DataFrame and sort by date
+                halving_df = pd.DataFrame(filtered_events)
+                halving_df = halving_df.sort_values('Date', ascending=False)
+                
+                # Display halving events table with price changes
+                st.dataframe(
+                    halving_df.style.format({
+                        '1 Week': '{:.1f}%',
+                        '1 Month': '{:.1f}%',
+                        '3 Months': '{:.1f}%',
+                        '6 Months': '{:.1f}%',
+                        '1 Year': '{:.1f}%'
+                    }).background_gradient(
+                        subset=['1 Week', '1 Month', '3 Months', '6 Months', '1 Year'],
+                        cmap='RdYlGn'
+                    ),
+                    use_container_width=True
+                )
+                
+                # Calculate and display average impact across all halvings
+                st.subheader("Average Impact of Halvings")
+                avg_impact = halving_df[['1 Week', '1 Month', '3 Months', '6 Months', '1 Year']].mean().round(1)
+                
+                col1, col2, col3, col4, col5 = st.columns(5)
+                with col1:
+                    st.metric("1 Week", f"{avg_impact['1 Week']:.1f}%")
+                with col2:
+                    st.metric("1 Month", f"{avg_impact['1 Month']:.1f}%")
+                with col3:
+                    st.metric("3 Months", f"{avg_impact['3 Months']:.1f}%")
+                with col4:
+                    st.metric("6 Months", f"{avg_impact['6 Months']:.1f}%")
+                with col5:
+                    st.metric("1 Year", f"{avg_impact['1 Year']:.1f}%")
+            else:
+                st.info("No halving events found in the selected date range.")
 
     def run(self):
         """Run the Streamlit application."""
@@ -1823,7 +2047,6 @@ class BitcoinFestivalApp:
                 (pd.to_datetime(festivals['start_date']) >= now) &
                 (pd.to_datetime(festivals['start_date']) <= end_date)
             ]
-        
         # Calculate statistics
         stats_df = self.fetcher.analyze_festival_performance(prices_df, festivals)
         

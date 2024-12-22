@@ -1,0 +1,237 @@
+{
+    "fed_events": [
+        {
+            "date": "2024-01-31",
+            "event": "Fed Rate Hold",
+            "description": "Fed maintains interest rates at 5.25-5.50%",
+            "type": "neutral",
+            "impact": "Fed signals potential rate cuts in 2024",
+            "category": "fed"
+        },
+        {
+            "date": "2023-07-26",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 5.25-5.50%",
+            "type": "negative",
+            "impact": "Last rate hike of 2023 tightening cycle",
+            "category": "fed"
+        },
+        {
+            "date": "2023-05-03",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 5.00-5.25%",
+            "type": "negative",
+            "impact": "Tenth consecutive rate increase",
+            "category": "fed"
+        },
+        {
+            "date": "2023-03-22",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 4.75-5.00%",
+            "type": "negative",
+            "impact": "Rate hike despite banking crisis",
+            "category": "fed"
+        },
+        {
+            "date": "2022-12-14",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 4.25-4.50%",
+            "type": "negative",
+            "impact": "Seventh rate hike of 2022",
+            "category": "fed"
+        },
+        {
+            "date": "2022-09-21",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 3.00-3.25%",
+            "type": "negative",
+            "impact": "Third consecutive 75 basis point hike",
+            "category": "fed"
+        },
+        {
+            "date": "2022-07-27",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 2.25-2.50%",
+            "type": "negative",
+            "impact": "Second consecutive 75 basis point hike",
+            "category": "fed"
+        },
+        {
+            "date": "2022-06-15",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 1.50-1.75%",
+            "type": "negative",
+            "impact": "Largest rate hike since 1994",
+            "category": "fed"
+        },
+        {
+            "date": "2022-05-04",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 0.75-1.00%",
+            "type": "negative",
+            "impact": "Largest rate hike since 2000",
+            "category": "fed"
+        },
+        {
+            "date": "2022-03-16",
+            "event": "Fed Rate Hike",
+            "description": "Fed raises rates to 0.25-0.50%",
+            "type": "negative",
+            "impact": "First rate hike since 2018",
+            "category": "fed"
+        },
+        {
+            "date": "2020-03-15",
+            "event": "Fed Emergency Cut",
+            "description": "Fed cuts rates to 0-0.25% due to COVID-19",
+            "type": "neutral",
+            "impact": "Emergency rate cut to near zero",
+            "category": "fed"
+        }
+    ],
+    "major_events": [
+        {
+            "date": "2024-12-02",
+            "event": "Trump 2nd Election",
+            "description": "Donald Trump elected as US President again",
+            "type": "positive",
+            "impact": "Trump is back in the White House",
+            "category": "major"
+        },
+        {
+            "date": "2024-01-10",
+            "event": "Spot Bitcoin ETF",
+            "description": "SEC approves spot Bitcoin ETFs",
+            "type": "positive",
+            "impact": "Major institutional adoption milestone",
+            "category": "major"
+        },
+        {
+            "date": "2024-01-10",
+            "event": "Grayscale ETF",
+            "description": "Grayscale wins Bitcoin ETF approval",
+            "type": "positive",
+            "impact": "GBTC conversion to ETF approved",
+            "category": "major"
+        },
+        {
+            "date": "2023-03-10",
+            "event": "SVB Collapse",
+            "description": "Silicon Valley Bank collapse",
+            "type": "negative",
+            "impact": "Banking crisis affects crypto markets",
+            "category": "major"
+        },
+        {
+            "date": "2022-11-08",
+            "event": "FTX Collapse",
+            "description": "FTX cryptocurrency exchange collapse",
+            "type": "negative",
+            "impact": "Major market crash and loss of confidence",
+            "category": "major"
+        },
+        {
+            "date": "2022-06-12",
+            "event": "stETH Depeg",
+            "description": "Lido stETH depegged from ETH",
+            "type": "negative",
+            "impact": "Caused liquidity crisis in DeFi",
+            "category": "major"
+        },
+        {
+            "date": "2022-05-07",
+            "event": "LUNA/UST Crash",
+            "description": "Terra/LUNA ecosystem collapse",
+            "type": "negative",
+            "impact": "Triggered broader crypto market selloff",
+            "category": "major"
+        },
+        {
+            "date": "2021-09-07",
+            "event": "El Salvador Bitcoin",
+            "description": "El Salvador adopts Bitcoin as legal tender",
+            "type": "positive",
+            "impact": "First country to adopt Bitcoin as legal tender",
+            "category": "major"
+        },
+        {
+            "date": "2021-04-14",
+            "event": "Coinbase IPO",
+            "description": "Coinbase goes public on NASDAQ",
+            "type": "positive",
+            "impact": "First major crypto exchange IPO",
+            "category": "major"
+        },
+        {
+            "date": "2021-02-08",
+            "event": "Tesla Bitcoin",
+            "description": "Tesla buys $1.5B in Bitcoin",
+            "type": "positive",
+            "impact": "Major corporate adoption",
+            "category": "major"
+        },
+        {
+            "date": "2020-03-12",
+            "event": "COVID Crash",
+            "description": "Market crash due to COVID-19 pandemic",
+            "type": "negative",
+            "impact": "Global market panic",
+            "category": "major"
+        },
+        {
+            "date": "2016-11-08",
+            "event": "Trump Election",
+            "description": "Donald Trump elected as US President",
+            "type": "neutral",
+            "impact": "Increased market uncertainty",
+            "category": "major"
+        }
+    ],
+    "halving_events": [
+        {
+            "date": "2028-05-01",
+            "event": "Fifth Halving",
+            "description": "Block reward to reduce from 3.125 to 1.5625 BTC",
+            "type": "neutral",
+            "impact": "Supply reduction event",
+            "category": "halving",
+            "block_height": 1050000
+        },
+        {
+            "date": "2024-04-20",
+            "event": "Fourth Halving",
+            "description": "Block reward to reduce from 6.25 to 3.125 BTC",
+            "type": "neutral",
+            "impact": "Supply reduction event",
+            "category": "halving",
+            "block_height": 840000
+        },
+        {
+            "date": "2020-05-11",
+            "event": "Third Halving",
+            "description": "Block reward reduced from 12.5 to 6.25 BTC",
+            "type": "neutral",
+            "impact": "Supply reduction event",
+            "category": "halving",
+            "block_height": 630000
+        },
+        {
+            "date": "2016-07-09",
+            "event": "Second Halving",
+            "description": "Block reward reduced from 25 to 12.5 BTC",
+            "type": "neutral",
+            "impact": "Supply reduction event",
+            "category": "halving",
+            "block_height": 420000
+        },
+        {
+            "date": "2012-11-28",
+            "event": "First Halving",
+            "description": "Block reward reduced from 50 to 25 BTC",
+            "type": "neutral",
+            "impact": "Supply reduction event",
+            "category": "halving",
+            "block_height": 210000
+        }
+    ]
+} 

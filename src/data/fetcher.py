@@ -9,7 +9,8 @@ import requests
 import time
 import os
 from config.festivals import FESTIVALS
-from config.events import HALVING_EVENTS, MAJOR_EVENTS
+from config.events import HALVING_EVENTS, ALL_MARKET_EVENTS
+from config.events import Event
 from data.database import Database
 
 # Constants
@@ -294,7 +295,7 @@ class DataFetcher:
         from config.events import HALVING_EVENTS
         
         # Convert datetime objects to pandas Timestamps
-        halving_dates = [pd.Timestamp(event['date']) for event in HALVING_EVENTS]
+        halving_dates = [pd.Timestamp(event.date) for event in HALVING_EVENTS]
         return sorted(halving_dates)
 
     def get_next_halving_date(self) -> pd.Timestamp:
@@ -403,21 +404,16 @@ class DataFetcher:
         
         return pd.DataFrame(halving_stats)
 
-    def get_major_events(self) -> List[Dict]:
+    def get_major_events(self) -> List[Event]:
         """Return list of major market events that impacted Bitcoin price."""
-        from config.events import MAJOR_EVENTS
-        
         # Convert datetime objects to pandas Timestamps
         events = []
-        for event in MAJOR_EVENTS:
-            events.append({
-                **event,
-                'date': pd.Timestamp(event['date'])
-            })
+        for event in ALL_MARKET_EVENTS:
+            events.append(event)
         
-        return sorted(events, key=lambda x: x['date'])
+        return sorted(events, key=lambda x: x.date)
 
-    def analyze_event_impact(self, prices_df: pd.DataFrame, event: Dict, window_days: int = 30) -> Dict:
+    def analyze_event_impact(self, prices_df: pd.DataFrame, event: Event, window_days: int = 30) -> Dict:
         """Analyze price impact of a major market event.
         
         Args:
@@ -428,7 +424,7 @@ class DataFetcher:
         Returns:
             Dictionary with impact analysis
         """
-        event_date = event['date']
+        event_date = event.date
         
         # Get prices around the event
         pre_event = prices_df[
@@ -450,7 +446,7 @@ class DataFetcher:
         post_price = post_event['price'].iloc[-1]
         
         return {
-            **event,
+            **event.to_dict(),
             'price_at_event': event_price,
             'pre_event_return': ((event_price - pre_price) / pre_price) * 100,
             'post_event_return': ((post_price - event_price) / event_price) * 100,
