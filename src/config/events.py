@@ -53,13 +53,13 @@ class Event:
     def to_dict(self) -> dict:
         """Convert Event to dictionary format."""
         return {
-            'date': self.date,
+            'date': self.date.strftime('%Y-%m-%d'),
             'event': self.event,
             'description': self.description,
             'type': self.type.value,
             'impact': self.impact,
             'category': self.category.value,
-            'block_height': self.block_height
+            'block_height': self.block_height,
         }
 
 class EventManager:

@@ -9,8 +9,7 @@ import requests
 import time
 import os
 from config.festivals import FESTIVALS
-from config.events import HALVING_EVENTS, ALL_MARKET_EVENTS
-from config.events import Event
+from config.events import HALVING_EVENTS, ALL_MARKET_EVENTS, Event, EventType
 from data.database import Database
 
 # Constants
@@ -406,42 +405,35 @@ class DataFetcher:
 
     def get_major_events(self) -> List[Event]:
         """Return list of major market events that impacted Bitcoin price."""
-        # Convert datetime objects to pandas Timestamps
-        events = []
-        for event in ALL_MARKET_EVENTS:
-            events.append(event)
-        
-        return sorted(events, key=lambda x: x.date)
+        return sorted(ALL_MARKET_EVENTS, key=lambda x: x.date)
 
-    def analyze_event_impact(self, prices_df: pd.DataFrame, event: Event, window_days: int = 30) -> Dict:
+    def analyze_event_impact(self, prices_df: pd.DataFrame, event: Event, window_days: int = 30) -> Optional[Dict]:
         """Analyze price impact of a major market event.
         
         Args:
             prices_df: DataFrame with Bitcoin prices
-            event: Dictionary containing event information
+            event: Event object containing event information
             window_days: Number of days to analyze before and after event
             
         Returns:
-            Dictionary with impact analysis
+            Dictionary with impact analysis or None if data is insufficient
         """
-        event_date = event.date
-        
         # Get prices around the event
         pre_event = prices_df[
-            (prices_df.index >= event_date - pd.Timedelta(days=window_days)) &
-            (prices_df.index <= event_date)
+            (prices_df.index >= event.date - pd.Timedelta(days=window_days)) &
+            (prices_df.index <= event.date)
         ]
         
         post_event = prices_df[
-            (prices_df.index >= event_date) &
-            (prices_df.index <= event_date + pd.Timedelta(days=window_days))
+            (prices_df.index >= event.date) &
+            (prices_df.index <= event.date + pd.Timedelta(days=window_days))
         ]
         
         if pre_event.empty or post_event.empty:
             return None
         
         # Calculate impact metrics
-        event_price = prices_df[prices_df.index <= event_date]['price'].iloc[-1]
+        event_price = prices_df[prices_df.index <= event.date]['price'].iloc[-1]
         pre_price = pre_event['price'].iloc[0]
         post_price = post_event['price'].iloc[-1]
         

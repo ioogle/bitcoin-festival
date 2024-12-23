@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 # Add src directory to Python path
 src_path = str(Path(__file__).parent.parent.absolute())
@@ -26,7 +26,7 @@ from utils.visualization import (
     create_volatility_chart,
     format_metrics
 )
-from src.config.events import HALVING_EVENTS, ALL_MARKET_EVENTS
+from config.events import HALVING_EVENTS, ALL_MARKET_EVENTS, Event, EventType
 
 class BitcoinFestivalApp:
     def __init__(self):
@@ -1146,7 +1146,7 @@ class BitcoinFestivalApp:
                 
                 events = self.fetcher.get_major_events()
                 for event in events:
-                    event_date = event['date']
+                    event_date = event.date
                     if event_date >= fear_greed_df.index[0] and event_date <= fear_greed_df.index[-1]:
                         pre_event = fear_greed_df[
                             (fear_greed_df.index >= event_date - pd.Timedelta(days=window)) &
@@ -1735,7 +1735,7 @@ class BitcoinFestivalApp:
                 {
                     'Date': e.date.strftime('%Y-%m-%d'),
                     'Event': e.event,
-                    'Type': e.type.capitalize(),
+                    'Type': e.type.value,
                     'Description': e.description,
                     **calculate_price_changes(e.date, prices_df)
                 }
@@ -1792,7 +1792,7 @@ class BitcoinFestivalApp:
                     'Date': e.date.strftime('%Y-%m-%d'),
                     'Event': e.event,
                     'Description': e.description,
-                    'Type': e.type.capitalize(),
+                    'Type': e.type.value,
                     **calculate_price_changes(e.date, prices_df)
                 }
                 for e in fed_events
@@ -1839,10 +1839,11 @@ class BitcoinFestivalApp:
                 st.subheader("Federal Funds Rate History")
                 rate_history = pd.DataFrame([
                     {
-                        'Date': datetime.strptime(e['Date'], '%Y-%m-%d'),
-                        'Rate': float(e['Description'].split(':')[1].strip('%'))
+                        'Date': e.date,
+                        'Rate': float(e.description.split(':')[1].strip('%'))
                     }
-                    for e in filtered_events
+                    for e in fed_events
+                    if e.date >= prices_df.index[0] and e.date <= prices_df.index[-1]
                 ]).sort_values('Date')
                 
                 fig = px.line(
@@ -2041,12 +2042,12 @@ class BitcoinFestivalApp:
             festivals = festivals[
                 (pd.to_datetime(festivals['end_date']) <= now) &
                 (pd.to_datetime(festivals['start_date']) >= start_date)
-            ]
+        ]
         else:
             festivals = festivals[
                 (pd.to_datetime(festivals['start_date']) >= now) &
                 (pd.to_datetime(festivals['start_date']) <= end_date)
-            ]
+        ]
         # Calculate statistics
         stats_df = self.fetcher.analyze_festival_performance(prices_df, festivals)
         

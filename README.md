@@ -23,7 +23,7 @@ A Streamlit application that tracks Bitcoin price performance during festivals a
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/bitcoin-festival-tracker.git
+git clone https://github.com/ioogle/bitcoin-festival-tracker.git
 cd bitcoin-festival-tracker
 ```
 
@@ -34,7 +34,7 @@ pip install -r requirements.txt
 
 3. Run the application:
 ```bash
-streamlit run src/views/app.py
+python run.py
 ```
 
 ## Analysis Features
