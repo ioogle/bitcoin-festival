@@ -31,7 +31,7 @@ class DataFetcher:
         self.db = db if db is not None else Database()
         
     def fetch_bitcoin_prices(self, start_date: str = START_DATE, end_date: str = None) -> pd.DataFrame:
-        """Fetch Bitcoin price data from Yahoo Finance.
+        """Fetch Bitcoin price data from Yahoo Finance with data persistence and daily updates.
         
         Args:
             start_date: Start date in YYYY-MM-DD format
@@ -43,16 +43,64 @@ class DataFetcher:
         if end_date is None:
             end_date = datetime.now().strftime('%Y-%m-%d')
         
+        # Convert dates to datetime objects
+        start_dt = pd.to_datetime(start_date)
+        end_dt = pd.to_datetime(end_date)
+        
+        # Get existing data from database
+        existing_data = self.db.get_bitcoin_prices()
+        
+        if not existing_data.empty:
+            # Check if we need to update the data
+            last_date = existing_data.index.max()
+            today = pd.Timestamp.now().normalize()
+            
+            # If data is current (updated today), return filtered data
+            if last_date.normalize() == today:
+                return existing_data[
+                    (existing_data.index >= start_dt) & 
+                    (existing_data.index <= end_dt)
+                ]
+            
+            # If we need to update, only fetch missing data
+            start_date = (last_date + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+        
+        # Fetch new data
         for attempt in range(MAX_RETRIES):
             try:
                 btc = yf.Ticker(BITCOIN_TICKER)
-                df = btc.history(start=start_date, end=end_date)
-                if not df.empty:
+                new_data = btc.history(start=start_date, end=end_date)
+                
+                if not new_data.empty:
                     # Convert to timezone-naive
-                    df.index = df.index.tz_localize(None)
-                    return df[['Close']].rename(columns={'Close': 'price'})
+                    new_data.index = new_data.index.tz_localize(None)
+                    new_data = new_data[['Close']].rename(columns={'Close': 'price'})
+                    
+                    # Merge with existing data if any
+                    if not existing_data.empty:
+                        df = pd.concat([existing_data, new_data])
+                        df = df[~df.index.duplicated(keep='last')]  # Remove duplicates
+                        df.sort_index(inplace=True)
+                    else:
+                        df = new_data
+                    
+                    # Store updated data in database
+                    self.db.store_bitcoin_prices(df)
+                    
+                    # Return requested date range
+                    return df[
+                        (df.index >= start_dt) & 
+                        (df.index <= end_dt)
+                    ]
+                    
             except Exception as e:
                 if attempt == MAX_RETRIES - 1:
+                    # If all retries failed and we have existing data, return what we have
+                    if not existing_data.empty:
+                        return existing_data[
+                            (existing_data.index >= start_dt) & 
+                            (existing_data.index <= end_dt)
+                        ]
                     raise Exception(f"Failed to fetch Bitcoin prices: {str(e)}")
                 time.sleep(RETRY_DELAY)
         

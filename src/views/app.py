@@ -46,23 +46,52 @@ class BitcoinFestivalApp:
         st.title("🎊 Bitcoin Festival Price Tracker")
 
     def load_initial_data(self):
-        """Load initial data into the database."""
-        # Load Bitcoin prices if not exists
-        prices = self.db.get_bitcoin_prices()
-        if prices.empty:
-            with st.spinner("Fetching Bitcoin price data..."):
-                prices = self.fetcher.fetch_bitcoin_prices()
-                if not prices.empty:
-                    self.db.store_bitcoin_prices(prices)
+        """Load and update initial data into the database."""
+        try:
+            with st.spinner("Loading Bitcoin price data..."):
+                # Get current time for checking data freshness
+                now = pd.Timestamp.now()
+                
+                # Get existing price data
+                prices = self.db.get_bitcoin_prices()
+                
+                if prices.empty:
+                    # Initial data load
+                    st.info("Performing initial data load...")
+                    prices = self.fetcher.fetch_bitcoin_prices()
+                    if prices.empty:
+                        st.error("Failed to fetch Bitcoin price data.")
+                        st.stop()
                 else:
-                    st.error("Failed to fetch Bitcoin price data.")
-                    st.stop()
-        
-        # Load festivals if not exists
-        festivals = self.db.get_festivals()
-        if len(festivals) == 0:
-            festivals_df = self.fetcher.get_festivals_data()
-            self.db.store_festivals(festivals_df)
+                    # Check if data needs updating
+                    last_date = prices.index.max()
+                    if last_date.normalize() < now.normalize():
+                        st.info("Updating price data...")
+                        prices = self.fetcher.fetch_bitcoin_prices()
+                        if prices.empty:
+                            st.warning("Failed to update prices. Using existing data.")
+                    else:
+                        st.success("Price data is up to date.")
+                
+                # Load festivals if not exists
+                festivals = self.db.get_festivals()
+                if len(festivals) == 0:
+                    st.info("Loading festival data...")
+                    festivals_df = self.fetcher.get_festivals_data()
+                    self.db.store_festivals(festivals_df)
+                    st.success("Festival data loaded successfully.")
+                
+                # Show data status
+                if not prices.empty:
+                    st.sidebar.info(
+                        f"📊 Data Range: "
+                        f"{prices.index.min().strftime('%Y-%m-%d')} to "
+                        f"{prices.index.max().strftime('%Y-%m-%d')}"
+                    )
+                    
+        except Exception as e:
+            st.error(f"Error loading data: {str(e)}")
+            st.stop()
 
     def show_overview(self, prices_df: pd.DataFrame, stats_df: pd.DataFrame):
         """Show overview of Bitcoin price performance during festivals."""
