@@ -1,49 +1,162 @@
-# Project: Bitcoin Indicator Tracker
+# Bitcoin Festival Price Tracker Development Specification for AI Agent
 
-## Project Standards
-- Use Python 3.8+ for development
-- Apply type hints for better code readability
-- Follow PEP 8 style guidelines
+## Agent Capabilities Reference
 
-## Style Guidelines
-- Use 4 spaces for indentation
-- Max line length: 88 characters (Black formatter standard)
-- Use descriptive variable and function names
-- Follow Python naming conventions:
-  - snake_case for functions and variables
-  - PascalCase for classes
+1. Vector Search: Utilize vector DB to find similar code patterns
+2. Direct File Operations: Modify/create files in codebase
+3. Auto-iteration: Self-correct based on lint feedback
 
-## Best Practices
-- Use SQLAlchemy ORM for database operations
-- Implement proper error handling and logging
-- Use environment variables for sensitive data
-- Follow SOLID principles
-- Implement input validation
+## Initial Analysis Instructions
 
-## Dependencies
-- Streamlit for web interface
-- SQLite for database
-- Pandas for data manipulation
-- Python-dotenv for environment variables
-- SQLAlchemy for ORM
-- Toml for configuration
-- Pydantic for data validation
+1. Codebase Search Parameters
 
-## Testing
-- Write unit tests using pytest
-- Aim for minimum 80% test coverage
-- Use pytest-mock for mocking
-- Implement integration tests for critical paths
+   ```json
+   {
+     "primary_path": "src/",
+     "search_depth": 2,
+     "file_types": [".py"],
+     "priority_patterns": [
+       "class definitions",
+       "interface implementations",
+       "error handling patterns"
+     ]
+   }
+   ```
 
-## Documentation Guidelines
-- Include docstrings for all functions and classes
-- Document API endpoints and parameters
-- Maintain a README with setup and usage instructions
-- Document database schema and relationships
+2. Context Assembly
+   ```json
+   {
+     "required_files": [
+       "main architectural components",
+       "related domain models",
+       "relevant interfaces",
+       "error handling utilities"
+     ],
+     "max_context_files": 10,
+     "code_pattern_weight": 0.8,
+     "naming_convention_weight": 0.7
+   }
+   ```
 
-## Security Considerations
-- Implement input sanitization
-- Use parameterized queries for database operations
-- Store sensitive data in environment variables
-- Implement proper authentication if required
-- Regular dependency updates for security patches
+## Technical Framework
+
+1. Core Technologies
+
+   ```json
+   {
+     "language": "Python",
+     "version": ">=3.8",
+     "key_frameworks": {
+       "web": "FastAPI",
+       "ui": "Streamlit",
+       "database": "SQLite"
+     }
+   }
+   ```
+
+2. Code Structure Requirements
+   ```json
+   {
+     "max_line_length": 100,
+     "indentation": "spaces",
+     "indentation_size": 4,
+     "code_style": {
+       "nesting": "minimize",
+       "prefer_early_returns": true,
+       "max_indent_level": 3
+     },
+     "type_system": {}
+   }
+   ```
+
+## Implementation Process
+
+1. Pre-Generation Analysis
+
+   ```json
+   {
+     "vector_search_queries": [
+       "similar feature implementations",
+       "error handling patterns",
+       "test structures"
+     ],
+     "pattern_recognition": {
+       "code_style": true,
+       "error_handling": true,
+       "type_usage": true
+     }
+   }
+   ```
+
+2. Generation Rules
+
+   ```json
+   {
+     "test_requirements": {
+       "coverage_target": 0.8,
+       "test_tools": ["pytest", "unittest.mock"],
+       "test_patterns": ["positive_cases", "negative_cases", "edge_cases"],
+       "test_naming": {
+         "function_test": "test_<func_name>",
+         "method_test": "test_<class_name>_<func_name>",
+         "benchmark_test": "benchmark_<func_name>",
+         "example_test": "example_<func_name>"
+       }
+     },
+     "documentation": {
+       "required_sections": [
+         "function_purpose",
+         "parameters",
+         "return_values",
+         "error_conditions"
+       ]
+     }
+   }
+   ```
+
+3. Quality Verification
+   ```json
+   {
+     "lint_checks": ["flake8", "pylint", "mypy"],
+     "auto_iteration_triggers": {
+       "lint_errors": true,
+       "test_failures": true,
+       "style_violations": true
+     },
+     "performance_checks": ["complexity", "memory_usage", "concurrent_safety"]
+   }
+   ```
+
+## Iteration Protocol
+
+1. Error Handling
+
+   ```json
+   {
+     "retry_attempts": 3,
+     "error_categories": {
+       "lint": "auto_fix",
+       "compile": "analyze_and_correct",
+       "test": "regenerate_with_patterns"
+     }
+   }
+   ```
+
+2. Feedback Integration
+   ```json
+   {
+     "learning_parameters": {
+       "pattern_reinforcement": true,
+       "error_pattern_memory": true,
+       "style_adaptation": true
+     }
+   }
+   ```
+
+## Success Criteria
+
+1. All lint checks pass
+2. Test coverage meets target
+3. Documentation complete and follows PEP257
+4. Follows existing patterns
+5. Performance metrics within bounds
