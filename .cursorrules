@@ -99,8 +99,6 @@
        "test_naming": {
          "function_test": "test_<func_name>",
          "method_test": "test_<class_name>_<func_name>",
-         "benchmark_test": "benchmark_<func_name>",
-         "example_test": "example_<func_name>"
        }
      },
      "documentation": {
